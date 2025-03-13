@@ -28,12 +28,12 @@ export function FileUploader({
   return (
     <div
       {...getRootProps()}
-      className={`border border-dashed border-gray-300 dark:bg-gray-900 p-6 rounded-lg hover:scale-105 transition-all cursor-pointer ${
+      className={`border border-dashed border-gray-400 dark:bg-gray-900 p-6 rounded-lg hover:scale-105 transition-all cursor-pointer ${
         isDragActive ? 'bg-gray-200' : 'bg-gray-100'
       }`}
     >
       <input {...getInputProps()} />
-      <p className="text-center text-gray-300">
+      <p className="text-center text-gray-400">
         {isDragActive ? MSG_DRAG_ACTIVE : MSG_DRAG_INACTIVE}
       </p>
     </div>

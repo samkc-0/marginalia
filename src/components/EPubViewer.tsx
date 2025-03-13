@@ -5,12 +5,14 @@ const LBL_NEXT_PAGE = '▷'
 const LBL_PREVIOUS_PAGE = 'ᐊ'
 const LBL_PAGE_NUMBER = 'Page'
 const LBL_PAGE_OF = 'of'
+const LBL_CLOSE_BOOK = '⛌'
 
 interface EPubViewerProps {
   fileData: ArrayBuffer
+  onClose: () => void
 }
 
-export function EPubViewer({ fileData }: EPubViewerProps) {
+export function EPubViewer({ fileData, onClose }: EPubViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null)
   const bookRef = useRef<Book | null>(null)
   const renditionRef = useRef<Rendition | null>(null)
@@ -71,14 +73,31 @@ export function EPubViewer({ fileData }: EPubViewerProps) {
         aria-label="EPub viewer"
       />
       <div className="flex justify-between w-full p-2">
-        <button onClick={previousPage} className="px-4 py-2 bg-black rounded">
-          {LBL_PREVIOUS_PAGE}
-        </button>
+        <Button onClick={previousPage} label={LBL_PREVIOUS_PAGE} />
         <span className="text-sm text-black font-sans">{currentLocation}</span>
-        <button onClick={nextPage} className="px-4 py-2 bg-black rounded">
-          {LBL_NEXT_PAGE}
-        </button>
+        <Button onClick={nextPage} label={LBL_NEXT_PAGE} />
+        <Button
+          onClick={onClose}
+          label={LBL_CLOSE_BOOK}
+          position={['0', '0']}
+        />
       </div>
     </div>
+  )
+}
+
+interface ButtonProps {
+  onClick: () => void
+  label: string
+  position?: [string, string]
+}
+function Button({ onClick, label, position }: ButtonProps) {
+  let className = 'px-4 py-2 text-white bg-black rounded'
+  if (position != null)
+    className += ` fixed right-${position[0]} top-${position[1]}`
+  return (
+    <button onClick={onClick} className={className}>
+      {label}
+    </button>
   )
 }
