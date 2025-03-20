@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# placeholder epub that loads on startup
+default.epub
+public/*.epub

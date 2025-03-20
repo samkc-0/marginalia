@@ -23,7 +23,7 @@ const fontSerif = FontSerif({
 })
 
 export const metadata: Metadata = {
-  title: 'Marginalia',
+  title: '𝔪𝔞𝔯𝔤𝔦𝔫𝔞𝔩𝔦𝔞',
   description: 'AI annotated eBooks',
 }
 
