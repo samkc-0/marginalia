@@ -1,8 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { JSX, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import Epub, { Book, Rendition } from 'epubjs'
 import Section from 'epubjs/types/section'
+import { Eagle_Lake as Medieval } from 'next/font/google'
+
+const medieval = Medieval({
+  subsets: ['latin'],
+  weight: '400',
+})
 
 export default function Home() {
   return (
@@ -10,6 +16,14 @@ export default function Home() {
       <EPubViewer />
     </div>
   )
+}
+
+type Position = { x: number; y: number }
+type Annotation = {
+  headword: string
+  explanation?: string
+  illustration?: ReactNode
+  position: Position
 }
 
 const DEFAULT_BOOK = '/default.epub'
@@ -23,6 +37,7 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
   const renditionRef = useRef<Rendition | null>(null)
   const [chapters, setChapters] = useState<string[]>([])
   const [currentChapter, setCurrentChapter] = useState<string | null>(null)
+  const [notes, setNotes] = useState<Annotation[]>([])
 
   const DEFAULT_THEME = {
     body: {
@@ -93,11 +108,11 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
       // Function to wrap words in spans
       function wrapWordsInSpan(node: Node) {
         if (node.nodeType === Node.TEXT_NODE) {
-          if (node.textContent) {
-            const text = node.textContent!.trim()
+          const text = node.textContent!.trim()
+          if (text) {
             const words = text.split(/\s+/)
             const spanContainer = document.createElement('span')
-            words.forEach((word, index) => {
+            words.forEach((word: string, index: number) => {
               const span = document.createElement('span')
               span.classList.add('word')
               span.textContent = word
@@ -106,7 +121,6 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
                 spanContainer.appendChild(document.createTextNode(' '))
               }
             })
-            if (!node.parentNode) throw new Error(`No parent node for ${node}`)
             node.parentNode!.replaceChild(spanContainer, node)
           }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
@@ -127,12 +141,18 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
     rendition.on('click', (event: MouseEvent) => {
       const target = event.target as HTMLElement
       if (target.classList.contains('word')) {
-        const position = { x: event.clientX, y: event.clientY }
+        const position = { x: 0, y: 0 }
         // create react component for word, x, y that is the card and is draggable
+
         console.log(position)
-        viewerRef.current?.focus()
+        const note: Annotation = {
+          headword: (target.textContent || '[error]').trim(),
+          position,
+        }
+        setNotes((prev) => [...prev, note])
       }
       event.stopPropagation()
+      viewerRef.current?.focus()
     })
 
     const toc = await book.loaded.navigation
@@ -165,6 +185,18 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
       >
         &lt;
       </ImageButton>
+      {notes.map((note, i) => {
+        return (
+          <DraggableCard key={i} x={note.position.x} y={note.position.y}>
+            <h2 className={`${medieval.className} text-2xl`}>
+              {note.headword}
+            </h2>
+            <p className={`${medieval.className} text-lg`}>
+              <Definition headword={note.headword} />
+            </p>
+          </DraggableCard>
+        )
+      })}
     </>
   )
 }
@@ -215,4 +247,97 @@ const ImageButton = ({
         throw new Error(`Invalid corner, '${corner}'`)
     }
   }
+}
+
+interface DraggableCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  x?: number
+  y?: number
+}
+
+const DraggableCard: React.FC<DraggableCardProps> = ({
+  x = 0,
+  y = 0,
+  children,
+  className = '',
+  style = {},
+  ...rest
+}) => {
+  const [position, setPosition] = useState({ x, y })
+  const [isDragging, setIsDragging] = useState(false)
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
+
+  const handleStart = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+
+      setIsDragging(true)
+      setStartPos({ x: clientX - position.x, y: clientY - position.y })
+      e.stopPropagation()
+    },
+    [position]
+  )
+
+  const handleMove = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+
+      setPosition({ x: clientX - startPos.x, y: clientY - startPos.y })
+      e.preventDefault()
+    },
+    [isDragging, startPos]
+  )
+
+  const handleEnd = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMove)
+      window.addEventListener('mouseup', handleEnd)
+      window.addEventListener('touchmove', handleMove, { passive: false })
+      window.addEventListener('touchend', handleEnd)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleEnd)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleEnd)
+    }
+  }, [isDragging, handleMove, handleEnd])
+
+  return (
+    <div
+      {...rest}
+      className={`${medieval.className} max-w-[18vw] text-2xl fixed bg-inherit text-inherit backdrop-blur-sm rounded-sm hover:shadow-lg hover:border p-4 z-50 cursor-grab active:cursor-grabbing select-none ${className}`}
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        touchAction: 'none',
+        ...style,
+      }}
+      onMouseDown={handleStart}
+      onTouchStart={handleStart}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function Definition({ headword }: { headword: string }): JSX.Element {
+  const [definition, setDefinition] = useState<string>('')
+  useEffect(() => {
+    const getDefinition = async () => {
+      const url = `api/langchain?word=${headword}`
+      fetch(url)
+        .then((response) => response.json())
+        .then(({ definition }) => setDefinition(definition))
+    }
+    getDefinition()
+  }, [])
+  if (!definition) return <span className="animate-spin">⏳</span>
+  return <>{definition}</>
 }
