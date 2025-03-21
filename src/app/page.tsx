@@ -12,9 +12,11 @@ const medieval = Medieval({
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 font-serif">
-      <EPubViewer />
-    </div>
+    <>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 font-serif">
+        <EPubViewer />
+      </div>
+    </>
   )
 }
 
@@ -24,6 +26,7 @@ type Annotation = {
   explanation?: string
   illustration?: ReactNode
   position: Position
+  audio?: ReactNode
 }
 
 const DEFAULT_BOOK = '/default.epub'
@@ -43,10 +46,10 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
     body: {
       'font-family': '"EB Garamond", serif',
       'font-size': `${fontSize}rem`,
-      'max-width': '50vw',
+      'max-width': '100%',
       margin: '0 auto',
-      'padding-left': '5vw',
-      'padding-right': '5vw',
+      'padding-left': '0',
+      'padding-right': '0',
       'text-align': 'justify',
     },
   }
@@ -87,7 +90,7 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
     bookRef.current = book
 
     const rendition = book.renderTo(viewerRef.current!, {
-      width: '60vw',
+      width: '100%',
       height: '100%',
       spread: 'none',
     })
@@ -165,7 +168,7 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
     <>
       <div
         ref={viewerRef}
-        className="fixed top-0 focus:outline-none w-full h-full bg-transparent px-[20vw]"
+        className="fixed top-0 focus:outline-none w-full h-full bg-transparent px-[20vw] border-l border-black"
         tabIndex={0}
         onKeyDown={handleKeyPress}
       />
@@ -313,7 +316,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({
   return (
     <div
       {...rest}
-      className={`${medieval.className} max-w-[18vw] text-2xl fixed bg-inherit text-inherit backdrop-blur-sm rounded-sm hover:shadow-lg hover:border p-4 z-50 cursor-grab active:cursor-grabbing select-none ${className}`}
+      className={`${medieval.className} box-content max-w-[18vw] text-2xl fixed bg-inherit text-inherit backdrop-blur-2xl rounded-sm hover:shadow-lg hover:border p-1 z-50 cursor-grab active:cursor-grabbing select-none ${className}`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
         touchAction: 'none',
@@ -339,5 +342,5 @@ export function Definition({ headword }: { headword: string }): JSX.Element {
     getDefinition()
   }, [])
   if (!definition) return <span className="animate-spin">⏳</span>
-  return <>{definition}</>
+  return <>➭{definition}</>
 }
