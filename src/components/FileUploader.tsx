@@ -1,14 +1,7 @@
 'use client'
 import { JSX, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { getBooks, addBooks, deleteBook } from '@/indexeddb/books'
-
-interface StoredBook {
-  id?: number
-  name: string
-  data: ArrayBuffer
-  type: string
-}
+import { getBooks, addBooks, deleteBook, addBook } from '@/indexeddb/books'
 
 interface FileUploaderProps {
   onFilesUploaded: (files: File[]) => void
@@ -23,16 +16,13 @@ export function FileUploader({
   open,
   onClose,
 }: FileUploaderProps): JSX.Element | null {
-  const [files, setFiles] = useState<File[]>([])
   const [savedBooks, setSavedBooks] = useState<StoredBook[]>([])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: async (acceptedFiles) => {
-      setFiles(acceptedFiles)
-      addBooks(acceptedFiles)
+      await addBook(acceptedFiles[0])
       const books = await getBooks()
-      setSavedBooks(books)
-      onClose()
+      await setSavedBooks(books)
     },
     accept: { 'application/epub+zip': ['.epub'] },
   })
@@ -90,9 +80,9 @@ export function FileUploader({
                   className="group flex items-center justify-between hover:bg-slate-600/50 transition"
                 >
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation()
-                      onBookSelected(book)
+                      await onBookSelected(book)
                       onClose()
                     }}
                     className="w-full text-left px-3 py-2 text-sm text-slate-100"

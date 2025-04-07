@@ -6,6 +6,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -19,89 +20,40 @@ import {
   FiChevronRight,
 } from 'react-icons/fi'
 import { FileUploader } from '@/components/FileUploader'
-
-type Annotation = {
-  headword: string
-  explanation?: string
-  illustration?: ReactNode
-  position: { x: number; y: number }
-}
+import { EPubViewer } from '@/components/EPubViewer'
+import { chooseBackground } from './lib/utils'
 
 const DEFAULT_BOOK = '/default.epub'
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-0 font-serif">
-      <EPubViewer book={DEFAULT_BOOK} />
-    </div>
-  )
-}
-
-function EPubViewer({ book }: { book: string }) {
+  const [book, setBook] = useState<StoredBook | null>(null)
   const [uploaderOpen, setUploaderOpen] = useState(false)
-  const [bookUrl, setBookUrl] = useState(book)
-  const [bookKey, setBookKey] = useState(() => {
-    const filename = book.split('/').pop()?.split('.').shift() || ''
-    const md5 = (str: string) => {
-      let hash = 0
-      if (str.length === 0) return hash.toString()
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i)
-        hash = (hash << 5) - hash + char
-        hash = hash & hash // Convert to 32bit integer
-      }
-      return hash.toString()
-    }
-    return md5(filename)
-  })
 
-  const [cfi, setCfi] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(`lastCfi:${bookKey}`) || ''
-    }
-    return ''
-  })
-
-  const [notes, setNotes] = useState<Record<string, Annotation[]>>({})
-  const currentNotes = notes[cfi] || []
-
-  const handleRelocate = (newCfi: string) => {
-    setCfi(newCfi)
-    localStorage.setItem(`lastCfi:${bookKey}`, newCfi)
-  }
-
-  const handleNext = () => {
-    const event = new CustomEvent('navigateEPUB', { detail: 'next' })
-    window.dispatchEvent(event)
-  }
-
-  const handlePrev = () => {
-    const event = new CustomEvent('navigateEPUB', { detail: 'prev' })
-    window.dispatchEvent(event)
-  }
-
-  const handleFileUpload = (files: File[]) => {
-    // todo: handle the uploaded book data
-    console.log(files)
-  }
-
+  const background = chooseBackground()
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden">
-      <ReaderPage
-        cfi={cfi || 'epubcfi(/6/2[chapter1]!/4/2/6)'}
-        notes={currentNotes}
-        onRelocate={handleRelocate}
-        bookUrl={bookUrl}
-        bookKey={bookKey}
+    <div className="flex flex-col items-center justify-center min-h-screen p-0 font-serif overflow-hidden">
+      <FileUploader
+        onBookSelected={(book: StoredBook) => {
+          setBook(book)
+        }}
+        onClose={() => setUploaderOpen(false)}
+        onFilesUploaded={(files) => console.log(files.join(''))}
+        open={uploaderOpen}
+      />
+      <img
+        onClick={() => setUploaderOpen(true)}
+        className={'overflow-hidden fixed z-[-2]'}
+        src={background}
       />
 
-      <FileUploader
-        open={uploaderOpen}
-        onClose={() => setUploaderOpen(false)}
-        onFilesUploaded={handleFileUpload}
-        onBookSelected={(book) => {
-          console.log(book.name)
-        }}
-      />
+      {book?.data ? (
+        <EPubViewer book={book} />
+      ) : (
+        <img
+          onClick={() => setUploaderOpen(true)}
+          className={'overflow-hidden fixed'}
+          src={background}
+        />
+      )}
 
       <TaskBar>
         <TaskBarItem onClick={handlePrev}>
@@ -144,4 +96,14 @@ function TaskBarItem({
       {children}
     </button>
   )
+}
+
+function handleNext() {
+  const event = new CustomEvent('navigateEPUB', { detail: 'next' })
+  window.dispatchEvent(event)
+}
+
+function handlePrev() {
+  const event = new CustomEvent('navigateEPUB', { detail: 'prev' })
+  window.dispatchEvent(event)
 }

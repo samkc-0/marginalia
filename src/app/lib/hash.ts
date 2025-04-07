@@ -1,10 +1,7 @@
-export const md5 = (str: string) => {
-  let hash = 0
-  if (str.length === 0) return hash.toString()
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return hash.toString()
+export async function hash(buffer: ArrayBuffer): Promise<string> {
+  const hashBuffer = await window.crypto.subtle.digest('sha-1', buffer)
+  const decoder = new TextDecoder('utf-8')
+  const hashText = decoder.decode(hashBuffer)
+  console.log(hashText)
+  return hashText
 }

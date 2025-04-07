@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 import Epub, { Book, Rendition } from 'epubjs'
+import { EB_Garamond } from 'next/font/google'
 
 interface ReaderPageProps {
   cfi: string
   notes: any[]
   onRelocate: (newCfi: string) => void
-  bookUrl: string
-  bookKey: string
+  book: StoredBook
   fontSize?: string // e.g., '1.5rem'
 }
 
@@ -14,12 +14,11 @@ export function ReaderPage({
   cfi,
   notes,
   onRelocate,
-  bookUrl,
-  bookKey,
+  book,
   fontSize,
 }: ReaderPageProps) {
   const viewerRef = useRef<HTMLDivElement>(null)
-  const bookRef = useRef<Book | null>(null)
+  const epubRef = useRef<Book | null>(null)
   const renditionRef = useRef<Rendition | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -36,10 +35,13 @@ export function ReaderPage({
   }, [])
 
   useEffect(() => {
-    const book = Epub(bookUrl)
-    bookRef.current = book
+    if (!book.data) {
+      throw new Error('Book data is missing')
+    }
+    const epub: Book = Epub(book.data)
+    epubRef.current = epub
 
-    const rendition = book.renderTo(viewerRef.current!, {
+    const rendition = epub.renderTo(viewerRef.current!, {
       width: '100%',
       height: '100%',
       spread: 'none',
@@ -49,9 +51,9 @@ export function ReaderPage({
 
     rendition.themes.default({
       body: {
-        'font-family': 'sans-serif',
+        'font-family': '"Avenir", sans-serif',
         'font-size': fontSize ?? '1.25rem',
-        'line-height': '1.8',
+        'line-height': '2.2',
         margin: '0 auto',
         'max-width': '700px',
         padding: '2rem',
@@ -70,9 +72,10 @@ export function ReaderPage({
     return () => {
       window.removeEventListener('navigateEPUB', handleNavigate)
       rendition.destroy()
-      book.destroy()
+      epub.destroy()
     }
-  }, [])
+  }, [book.data])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const el = scrollRef.current
@@ -122,13 +125,16 @@ export function ReaderPage({
   }
 
   return (
-    <div ref={scrollRef} className="w-full h-full overflow-scroll bg-white">
+    <div
+      ref={scrollRef}
+      className="w-full h-full overflow-scroll bg-white shadow-lg"
+    >
       <div className="relative w-[2000px] h-[2000px]">
         {/* center book */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <div
             ref={viewerRef}
-            className="w-[400vw] max-w-[700px] h-[90vh] p-4 bg-white border border-dotted border-gray-300"
+            className="w-[400vw] max-w-[700px] h-[100vh] p-4 bg-white border-gray-300"
             tabIndex={0}
           />
         </div>

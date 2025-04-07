@@ -1,3 +1,4 @@
+import { hash } from '@/app/lib/hash'
 import Dexie, { type Table } from 'dexie'
 
 const MSG_FILE_READING_FAILED = 'File reading failed: '
@@ -30,7 +31,9 @@ export const addBook = async (file: File): Promise<void> => {
 
   try {
     const fileData = await readFileAsArrayBuffer()
+    const fileHash: string = await hash(fileData)
     await db.books.add({
+      key: fileHash,
       name: file.name,
       data: fileData,
       type: file.type,
