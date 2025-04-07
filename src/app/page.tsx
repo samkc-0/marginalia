@@ -1,357 +1,113 @@
 'use client'
 
-import { JSX, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  JSX,
+  MouseEventHandler,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import Epub, { Book, Rendition } from 'epubjs'
 import Section from 'epubjs/types/section'
-import { Eagle_Lake as Medieval } from 'next/font/google'
-
-const medieval = Medieval({
-  subsets: ['latin'],
-  weight: '400',
-})
-
-export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 font-serif">
-      <EPubViewer />
-    </div>
-  )
-}
-
-type Position = { x: number; y: number }
+import { ReaderPage } from '@/components/ReaderPage'
+import {
+  FiBookOpen,
+  FiFolder,
+  FiChevronLeft,
+  FiChevronRight,
+} from 'react-icons/fi'
 
 type Annotation = {
   headword: string
   explanation?: string
   illustration?: ReactNode
-  position: Position
+  position: { x: number; y: number }
 }
 
 const DEFAULT_BOOK = '/default.epub'
-
-interface EPubViewerProps {
-  fontSize?: number
+export default function Home() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-0 font-serif">
+      <EPubViewer book={DEFAULT_BOOK} />
+    </div>
+  )
 }
-export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
-  const viewerRef = useRef<HTMLDivElement>(null)
-  const bookRef = useRef<Book | null>(null)
-  const renditionRef = useRef<Rendition | null>(null)
-  const [chapters, setChapters] = useState<string[]>([])
-  const [currentChapter, setCurrentChapter] = useState<string | null>(null)
-  const [notes, setNotes] = useState<Annotation[]>([])
 
-  const DEFAULT_THEME = {
-    body: {
-      'font-family': '"EB Garamond", serif',
-      'font-size': `${fontSize}rem`,
-      'max-width': '100%',
-      margin: '0 auto',
-      'padding-left': '0',
-      'padding-right': '0',
-      'text-align': 'justify',
-    },
-  }
-
-  useEffect(() => {
-    loadBook(DEFAULT_BOOK)
-  }, [])
-
-  const handleNextPage = () => {
-    renditionRef.current?.next()
-  }
-
-  const handlePrevPage = () => {
-    renditionRef.current?.prev()
-  }
-
-  useEffect(() => {
-    if (renditionRef.current) renditionRef.current.themes.default(DEFAULT_THEME)
-  }, [fontSize])
-
-  const handleKeyPress: React.KeyboardEventHandler = (
-    event: React.KeyboardEvent<HTMLDivElement>
-  ) => {
-    if (event.key === 'ArrowRight') handleNextPage()
-    if (event.key === 'ArrowLeft') handlePrevPage()
-  }
-
-  useEffect(() => {
-    function focusViewer(): void {
-      viewerRef.current?.focus()
+function EPubViewer({ book }: { book: string }) {
+  const [cfi, setCfi] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`lastCfi:${book}`) || ''
     }
-    window.addEventListener('keydown', focusViewer)
-    return () => window.removeEventListener('keydown', focusViewer)
-  }, [])
+    return ''
+  })
 
-  const loadBook = async (url: string) => {
-    const book = Epub(url)
-    bookRef.current = book
+  const [notes, setNotes] = useState<Record<string, Annotation[]>>({})
+  const currentNotes = notes[cfi] || []
 
-    const rendition = book.renderTo(viewerRef.current!, {
-      width: '100%',
-      height: '100%',
-      spread: 'none',
-    })
+  const handleRelocate = (newCfi: string) => {
+    setCfi(newCfi)
+    localStorage.setItem('lastCfi', newCfi)
+  }
 
-    renditionRef.current = rendition
-    // When the content is rendered
-    rendition.on('rendered', function (section: Section) {
-      // Access the iframe's content
-      const iframe = document.querySelector('iframe')
-      if (!iframe) {
-        console.log('no iframe')
-        return
-      }
+  const handleNext = () => {
+    const event = new CustomEvent('navigateEPUB', { detail: 'next' })
+    window.dispatchEvent(event)
+  }
 
-      const doc = iframe.contentDocument || iframe.contentWindow!.document
-      const contents = doc.body
-
-      // Function to wrap words in spans
-      function wrapWordsInSpan(node: Node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const text = node.textContent!.trim()
-          if (text) {
-            const words = text.split(/\s+/)
-            const spanContainer = document.createElement('span')
-            words.forEach((word: string, index: number) => {
-              const span = document.createElement('span')
-              span.classList.add('word')
-              span.textContent = word
-              spanContainer.appendChild(span)
-              if (index < words.length - 1) {
-                spanContainer.appendChild(document.createTextNode(' '))
-              }
-            })
-            node.parentNode!.replaceChild(spanContainer, node)
-          }
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          // Recursively process child nodes
-          Array.from(node.childNodes).forEach((child) => wrapWordsInSpan(child))
-        }
-      }
-
-      // Apply the wrapping to all text nodes in the rendered content
-      wrapWordsInSpan(contents)
-      viewerRef.current!.focus()
-    })
-
-    rendition.on('relocated', (location: { start: { cfi: any } }) => {
-      const cfi = location.start.cfi
-      localStorage.setItem('lastLocation', cfi)
-    })
-
-    const savedLocation = localStorage.getItem('lastLocation')
-    if (savedLocation) {
-      await rendition.display(savedLocation)
-    } else {
-      await rendition.display()
-    }
-
-    rendition.themes.default(DEFAULT_THEME)
-
-    // Add click handler for word highlighting
-    rendition.on('click', (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (target.classList.contains('word')) {
-        const position = { x: 0, y: 0 }
-        // create react component for word, x, y that is the card and is draggable
-
-        console.log(position)
-        const note: Annotation = {
-          headword: (target.textContent || '[error]').trim(),
-          position,
-        }
-        setNotes((prev) => [...prev, note])
-      }
-      event.stopPropagation()
-      viewerRef.current?.focus()
-    })
-
-    const toc = await book.loaded.navigation
-    const chapterList = toc.toc.map((chapter) => chapter.href)
-    setChapters(chapterList)
-    setCurrentChapter(chapterList[0])
+  const handlePrev = () => {
+    const event = new CustomEvent('navigateEPUB', { detail: 'prev' })
+    window.dispatchEvent(event)
   }
 
   return (
-    <>
-      <div
-        ref={viewerRef}
-        className="fixed top-0 focus:outline-none w-full h-full bg-transparent px-[20vw] border-l border-black"
-        tabIndex={0}
-        onKeyDown={handleKeyPress}
+    <div className="flex flex-col h-screen w-full overflow-hidden">
+      <ReaderPage
+        cfi={cfi || 'epubcfi(/6/2[chapter1]!/4/2/6)'}
+        notes={currentNotes}
+        onRelocate={handleRelocate}
+        bookKey={book}
       />
-      <ImageButton
-        corner="bottomright"
-        src="rpg_arrow_left.png"
-        activeAnimation="active:translate-x-2"
-        onClick={handleNextPage}
-      >
-        &gt;
-      </ImageButton>
-      <ImageButton
-        corner="bottomleft"
-        src="rpg_arrow_right.png"
-        activeAnimation="active:-translate-x-2"
-        onClick={handlePrevPage}
-      >
-        &lt;
-      </ImageButton>
-      {notes.map((note, i) => {
-        return (
-          <DraggableCard key={i} x={note.position.x} y={note.position.y}>
-            <h2 className={`${medieval.className} text-2xl`}>
-              {note.headword}
-            </h2>
-            <p className={`${medieval.className} text-lg`}>
-              <Definition headword={note.headword} />
-            </p>
-          </DraggableCard>
-        )
-      })}
-    </>
+      <TaskBar>
+        <TaskBarItem onClick={handlePrev}>
+          <FiChevronLeft />
+        </TaskBarItem>
+        <TaskBarItem>
+          <FiFolder />
+        </TaskBarItem>
+        <TaskBarItem>
+          <FiBookOpen />
+        </TaskBarItem>
+        <TaskBarItem onClick={handleNext}>
+          <FiChevronRight />
+        </TaskBarItem>
+      </TaskBar>
+    </div>
   )
 }
 
-interface ImageButtonProps {
-  corner: 'topleft' | 'topright' | 'bottomright' | 'bottomleft'
-  src: string
-  activeAnimation: string
-}
-const ImageButton = ({
-  corner,
-  src,
-  activeAnimation,
-  children,
-  ...rest
-}: ImageButtonProps &
-  React.PropsWithChildren &
-  React.HTMLAttributes<HTMLButtonElement>) => {
-  const className = getClassName()
-  const focusStyle = ''
+function TaskBar({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <button
-      {...rest}
-      className={`
-        fixed ${className} w-16 h-16 p-0 border-none bg-transparent 
-        shadow-none hover:scale-[1.02] transition-all duration-100 
-        select-none ${activeAnimation} ${focusStyle}`}
-    >
-      <img
-        src={src}
-        className="w-full h-100% object-contain drop-shadow-lg hover:drop-shadow-xl transition-all"
-        alt={`Navigation arrow ${corner}`}
-      />
-    </button>
-  )
-
-  function getClassName(margin: string = '0') {
-    switch (corner) {
-      case 'topleft':
-        return `top-4 left-4`
-      case 'topright':
-        return `top-4 right-4`
-      case 'bottomleft':
-        return `bottom-4 left-4`
-      case 'bottomright':
-        return `bottom-4 right-4`
-      default:
-        throw new Error(`Invalid corner, '${corner}'`)
-    }
-  }
-}
-
-interface DraggableCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  x?: number
-  y?: number
-}
-
-const DraggableCard: React.FC<DraggableCardProps> = ({
-  x = 0,
-  y = 0,
-  children,
-  className = '',
-  style = {},
-  ...rest
-}) => {
-  const [position, setPosition] = useState({ x, y })
-  const [isDragging, setIsDragging] = useState(false)
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
-
-  const handleStart = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-
-      setIsDragging(true)
-      setStartPos({ x: clientX - position.x, y: clientY - position.y })
-      e.stopPropagation()
-    },
-    [position]
-  )
-
-  const handleMove = useCallback(
-    (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-
-      setPosition({ x: clientX - startPos.x, y: clientY - startPos.y })
-      e.preventDefault()
-    },
-    [isDragging, startPos]
-  )
-
-  const handleEnd = useCallback(() => {
-    setIsDragging(false)
-  }, [])
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMove)
-      window.addEventListener('mouseup', handleEnd)
-      window.addEventListener('touchmove', handleMove, { passive: false })
-      window.addEventListener('touchend', handleEnd)
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMove)
-      window.removeEventListener('mouseup', handleEnd)
-      window.removeEventListener('touchmove', handleMove)
-      window.removeEventListener('touchend', handleEnd)
-    }
-  }, [isDragging, handleMove, handleEnd])
-
-  return (
-    <div
-      {...rest}
-      className={`${medieval.className} box-content max-w-[18vw] text-2xl fixed bg-inherit text-inherit backdrop-blur-2xl rounded-sm hover:shadow-lg hover:border p-1 z-50 cursor-grab active:cursor-grabbing select-none ${className}`}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        touchAction: 'none',
-        ...style,
-      }}
-      onMouseDown={handleStart}
-      onTouchStart={handleStart}
-    >
+    <div className="fixed bottom-0 left-0 right-0 flex justify-center gap-0 px-0 py-0 bg-black text-white">
       {children}
     </div>
   )
 }
 
-export function Definition({ headword }: { headword: string }): JSX.Element {
-  const [definition, setDefinition] = useState<string>('')
-  useEffect(() => {
-    const getDefinition = async () => {
-      const url = `api/langchain?word=${headword}`
-      fetch(url)
-        .then((response) => response.json())
-        .then(({ definition }) => {
-          setDefinition(definition)
-        })
-    }
-    getDefinition()
-  }, [])
-  if (!definition) return <span className="animate-spin">⏳</span>
-  return <>{definition}</>
+function TaskBarItem({
+  onClick,
+  children,
+}: {
+  onClick?: MouseEventHandler<HTMLButtonElement> | undefined
+  children: ReactNode
+}): JSX.Element {
+  return (
+    <button
+      onClick={onClick}
+      className="flex gap-0 items-center justify-center w-full px-3 py-3 text-xl text-white bg-transparent hover:bg-gray-700"
+    >
+      {children}
+    </button>
+  )
 }
