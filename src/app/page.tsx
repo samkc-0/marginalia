@@ -18,6 +18,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi'
+import { FileUploader } from '@/components/FileUploader'
 
 type Annotation = {
   headword: string
@@ -36,6 +37,7 @@ export default function Home() {
 }
 
 function EPubViewer({ book }: { book: string }) {
+  const [uploaderOpen, setUploaderOpen] = useState(false)
   const [bookUrl, setBookUrl] = useState(book)
   const [bookKey, setBookKey] = useState(() => {
     const filename = book.split('/').pop()?.split('.').shift() || ''
@@ -77,6 +79,11 @@ function EPubViewer({ book }: { book: string }) {
     window.dispatchEvent(event)
   }
 
+  const handleFileUpload = (files: File[]) => {
+    // todo: handle the uploaded book data
+    console.log(files)
+  }
+
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden">
       <ReaderPage
@@ -86,11 +93,21 @@ function EPubViewer({ book }: { book: string }) {
         bookUrl={bookUrl}
         bookKey={bookKey}
       />
+
+      <FileUploader
+        open={uploaderOpen}
+        onClose={() => setUploaderOpen(false)}
+        onFilesUploaded={handleFileUpload}
+        onBookSelected={(book) => {
+          console.log(book.name)
+        }}
+      />
+
       <TaskBar>
         <TaskBarItem onClick={handlePrev}>
           <FiChevronLeft />
         </TaskBarItem>
-        <TaskBarItem>
+        <TaskBarItem onClick={() => setUploaderOpen(!uploaderOpen)}>
           <FiFolder />
         </TaskBarItem>
         <TaskBarItem>
