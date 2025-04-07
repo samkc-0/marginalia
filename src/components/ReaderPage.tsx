@@ -5,6 +5,7 @@ interface ReaderPageProps {
   cfi: string
   notes: any[]
   onRelocate: (newCfi: string) => void
+  bookUrl: string
   bookKey: string
   fontSize?: string // e.g., '1.5rem'
 }
@@ -13,6 +14,7 @@ export function ReaderPage({
   cfi,
   notes,
   onRelocate,
+  bookUrl,
   bookKey,
   fontSize,
 }: ReaderPageProps) {
@@ -34,7 +36,7 @@ export function ReaderPage({
   }, [])
 
   useEffect(() => {
-    const book = Epub(bookKey)
+    const book = Epub(bookUrl)
     bookRef.current = book
 
     const rendition = book.renderTo(viewerRef.current!, {
@@ -61,7 +63,6 @@ export function ReaderPage({
     rendition.on('relocated', (location: { start: { cfi: string } }) => {
       const newCfi = location.start.cfi
       onRelocate(newCfi)
-      localStorage.setItem(`lastCfi:${bookKey}`, newCfi)
     })
 
     window.addEventListener('navigateEPUB', handleNavigate)

@@ -36,9 +36,25 @@ export default function Home() {
 }
 
 function EPubViewer({ book }: { book: string }) {
+  const [bookUrl, setBookUrl] = useState(book)
+  const [bookKey, setBookKey] = useState(() => {
+    const filename = book.split('/').pop()?.split('.').shift() || ''
+    const md5 = (str: string) => {
+      let hash = 0
+      if (str.length === 0) return hash.toString()
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i)
+        hash = (hash << 5) - hash + char
+        hash = hash & hash // Convert to 32bit integer
+      }
+      return hash.toString()
+    }
+    return md5(filename)
+  })
+
   const [cfi, setCfi] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(`lastCfi:${book}`) || ''
+      return localStorage.getItem(`lastCfi:${bookKey}`) || ''
     }
     return ''
   })
@@ -48,7 +64,7 @@ function EPubViewer({ book }: { book: string }) {
 
   const handleRelocate = (newCfi: string) => {
     setCfi(newCfi)
-    localStorage.setItem('lastCfi', newCfi)
+    localStorage.setItem(`lastCfi:${bookKey}`, newCfi)
   }
 
   const handleNext = () => {
@@ -67,7 +83,8 @@ function EPubViewer({ book }: { book: string }) {
         cfi={cfi || 'epubcfi(/6/2[chapter1]!/4/2/6)'}
         notes={currentNotes}
         onRelocate={handleRelocate}
-        bookKey={book}
+        bookUrl={bookUrl}
+        bookKey={bookKey}
       />
       <TaskBar>
         <TaskBarItem onClick={handlePrev}>
