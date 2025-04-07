@@ -1,7 +1,7 @@
 'use client'
 import { JSX, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { getBooks } from '@/indexeddb/books'
+import { getBooks, addBooks } from '@/indexeddb/books'
 
 interface StoredBook {
   id?: number
@@ -29,7 +29,7 @@ export function FileUploader({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: async (acceptedFiles) => {
       setFiles(acceptedFiles)
-      onFilesUploaded(acceptedFiles)
+      addBooks(acceptedFiles)
       const books = await getBooks()
       setSavedBooks(books)
       onClose()
@@ -47,27 +47,36 @@ export function FileUploader({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div
-        {...getRootProps()}
-        className="relative w-[95vw] max-w-3xl p-8 rounded-lg border-2 border-dashed border-gray-400 bg-white dark:bg-gray-900 text-center cursor-pointer transition-all hover:border-gray-600 shadow-lg"
+      <button
+        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 rounded-full transition-colors"
+        onClick={onClose}
       >
-        <input {...getInputProps()} />
-
-        <p className="text-lg text-gray-700 dark:text-gray-200 font-semibold mb-4">
-          {isDragActive
-            ? '📥 Drop the file here...'
-            : '📚 Drag & drop an ePub file, or click to select one'}
-        </p>
-
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M1 1L11 11M1 11L11 1"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <div className="flex flex-col items-center relative w-[95vw] max-w-2xl p-8 rounded-lg border-2  border-slate-500 bg-slate-800 text-center transition-all hover:border-slate-400 shadow-lg">
         {savedBooks.length > 0 && (
-          <div className="text-left mt-6 border-t border-gray-300 dark:border-gray-700 pt-4">
-            <h2 className="text-base font-bold text-gray-600 dark:text-gray-300 mb-2">
+          <div className="w-full">
+            <h2 className="text-base font-bold text-slate-200 mb-2">
               Your Library
             </h2>
-            <div className="max-h-64 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 border rounded-md bg-gray-50 dark:bg-gray-800 p-2">
+            <div className="max-h-64 overflow-y-auto divide-y divide-slate-600 border border-slate-600 rounded-t-md rounded-b-none bg-slate-700/50 p-2">
               {savedBooks.map((book) => (
                 <button
                   key={book.id}
@@ -76,7 +85,7 @@ export function FileUploader({
                     onBookSelected(book)
                     onClose()
                   }}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-sm text-gray-800 dark:text-gray-100"
+                  className="w-full text-center px-3 py-2 hover:bg-slate-600/50 transition text-sm text-slate-100"
                 >
                   📖 {book.name}
                 </button>
@@ -84,13 +93,17 @@ export function FileUploader({
             </div>
           </div>
         )}
-
-        <button
-          className="mt-6 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-white"
-          onClick={onClose}
+        <div
+          {...getRootProps()}
+          className="flex justify-center items-center w-full p-8 rounded-b-lg border-2 border-dashed border-slate-500 bg-slate-800 cursor-pointer"
         >
-          Cancel ✕
-        </button>
+          <input {...getInputProps()} />
+          <p className="text-lg text-slate-200 font-semibold text-center">
+            {isDragActive
+              ? '📥 Drop the file here...'
+              : '📚 Drag & drop an ePub file, or click to select one'}
+          </p>
+        </div>
       </div>
     </div>
   )

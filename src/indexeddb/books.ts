@@ -15,7 +15,7 @@ class BookDatabase extends Dexie {
 
 export const db = new BookDatabase()
 
-export const addBooks = async (file: File): Promise<void> => {
+export const addBook = async (file: File): Promise<void> => {
   const readFileAsArrayBuffer = (): Promise<ArrayBuffer> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -41,6 +41,10 @@ export const addBooks = async (file: File): Promise<void> => {
         (error instanceof Error ? error.message : String(error))
     )
   }
+}
+
+export const addBooks = async (files: File[]): Promise<void> => {
+  await Promise.all(files.map((file) => addBook(file)))
 }
 
 export const getBooks = async (): Promise<StoredBook[]> => {
