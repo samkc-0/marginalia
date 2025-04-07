@@ -1,18 +1,18 @@
-import OpenAI from 'openai'
-import { playAudio } from 'openai/helpers/audio'
+import { NextRequest, NextResponse } from 'next/server'
+import { getReading } from '@/app/lib/tts'
 
-const openai = new OpenAI()
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const word = searchParams.get('word')
 
-const instructions =
-  'Voice Affect: Calm, composed, and reassuring. Competent and in control, instilling trust.\n\nTone: Sincere, empathetic, with genuine concern for the customer and understanding of the situation.\n\nPacing: Slower during the apology to allow for clarity and processing. Faster when offering solutions to signal action and resolution.\n\nEmotions: Calm reassurance, empathy, and gratitude.\n\nPronunciation: Clear, precise: Ensures clarity, especially with key details. Focus on key words like "refund" and "patience." \n\nPauses: Before and after the apology to give space for processing the apology.'
+  if (!word) {
+    return NextResponse.json(
+      { error: 'word param is required' },
+      { status: 400 }
+    )
+  }
 
-export async function readTextAloud(text: string) {
-  const response = await openai.audio.speech.create({
-    model: 'gpt-4o-mini-tts',
-    voice: 'nova',
-    input: text,
-    instructions,
-  })
+  const result = await getReading.call(null, word)
 
-  await playAudio(response)
+  return NextResponse.json({ play: result })
 }

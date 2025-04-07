@@ -12,21 +12,19 @@ const medieval = Medieval({
 
 export default function Home() {
   return (
-    <>
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 font-serif">
-        <EPubViewer />
-      </div>
-    </>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 font-serif">
+      <EPubViewer />
+    </div>
   )
 }
 
 type Position = { x: number; y: number }
+
 type Annotation = {
   headword: string
   explanation?: string
   illustration?: ReactNode
   position: Position
-  audio?: ReactNode
 }
 
 const DEFAULT_BOOK = '/default.epub'
@@ -136,7 +134,18 @@ export function EPubViewer({ fontSize = 2 }: EPubViewerProps) {
       wrapWordsInSpan(contents)
       viewerRef.current!.focus()
     })
-    rendition.display()
+
+    rendition.on('relocated', (location: { start: { cfi: any } }) => {
+      const cfi = location.start.cfi
+      localStorage.setItem('lastLocation', cfi)
+    })
+
+    const savedLocation = localStorage.getItem('lastLocation')
+    if (savedLocation) {
+      await rendition.display(savedLocation)
+    } else {
+      await rendition.display()
+    }
 
     rendition.themes.default(DEFAULT_THEME)
 
@@ -337,10 +346,12 @@ export function Definition({ headword }: { headword: string }): JSX.Element {
       const url = `api/langchain?word=${headword}`
       fetch(url)
         .then((response) => response.json())
-        .then(({ definition }) => setDefinition(definition))
+        .then(({ definition }) => {
+          setDefinition(definition)
+        })
     }
     getDefinition()
   }, [])
   if (!definition) return <span className="animate-spin">⏳</span>
-  return <>➭{definition}</>
+  return <>{definition}</>
 }

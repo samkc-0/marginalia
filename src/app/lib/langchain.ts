@@ -17,5 +17,6 @@ export async function getDefinition(word: string): Promise<AIMessageChunk> {
   const response = await chain.invoke({
     input: `What does "${word}" mean (in no more than 10 words)?`,
   })
-  return response
+
+  return response as AIMessageChunk
 }
