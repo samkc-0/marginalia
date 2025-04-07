@@ -1,7 +1,7 @@
 'use client'
 import { JSX, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { getBooks, addBooks } from '@/indexeddb/books'
+import { getBooks, addBooks, deleteBook } from '@/indexeddb/books'
 
 interface StoredBook {
   id?: number
@@ -36,6 +36,13 @@ export function FileUploader({
     },
     accept: { 'application/epub+zip': ['.epub'] },
   })
+
+  const handleDeleteBook = async (bookId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    await deleteBook(bookId)
+    const books = await getBooks()
+    setSavedBooks(books)
+  }
 
   useEffect(() => {
     if (open) {
@@ -78,17 +85,28 @@ export function FileUploader({
             </h2>
             <div className="max-h-64 overflow-y-auto divide-y divide-slate-600 border border-slate-600 rounded-t-md rounded-b-none bg-slate-700/50 p-2">
               {savedBooks.map((book) => (
-                <button
+                <div
                   key={book.id}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onBookSelected(book)
-                    onClose()
-                  }}
-                  className="w-full text-center px-3 py-2 hover:bg-slate-600/50 transition text-sm text-slate-100"
+                  className="group flex items-center justify-between hover:bg-slate-600/50 transition"
                 >
-                  📖 {book.name}
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onBookSelected(book)
+                      onClose()
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-100"
+                  >
+                    📖 {book.name}
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteBook(book.id!, e)}
+                    className="opacity-0 group-hover:opacity-100 px-3 py-2 text-slate-300 hover:text-red-500 transition-opacity"
+                    title="Delete book"
+                  >
+                    🗑️
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -97,7 +115,6 @@ export function FileUploader({
           {...getRootProps()}
           className="flex justify-center items-center w-full p-8 rounded-b-lg border-2 border-dashed border-slate-500 bg-slate-800 cursor-pointer"
         >
-          <input {...getInputProps()} />
           <p className="text-lg text-slate-200 font-semibold text-center">
             {isDragActive
               ? '📥 Drop the file here...'
