@@ -9,11 +9,8 @@ export function EPubViewer({
   position?: string
 }) {
   const [cfi, setCfi] = useState<string>(() => {
-    // handle demo book
-    const demoPage = 'epubcfi(/6/14!/4/2/4/1:0)'
     if (typeof window !== 'undefined') {
       const lastCfi = localStorage.getItem(`lastCfi:${book.key}`)
-      if (book.name === 'demo.epub' && !lastCfi) return demoPage
       return lastCfi || ''
     }
     return ''

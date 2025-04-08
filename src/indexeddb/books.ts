@@ -32,12 +32,15 @@ export const addBook = async (file: File): Promise<void> => {
   try {
     const fileData = await readFileAsArrayBuffer()
     const fileHash: string = await hash(fileData)
-    await db.books.add({
-      key: fileHash,
-      name: file.name,
-      data: fileData,
-      type: file.type,
-    })
+    const existingBook = await db.books.where('key').equals(fileHash).first()
+    if (!existingBook) {
+      await db.books.add({
+        key: fileHash,
+        name: file.name,
+        data: fileData,
+        type: file.type,
+      })
+    }
   } catch (error) {
     throw new Error(
       MSG_FILE_READING_FAILED +

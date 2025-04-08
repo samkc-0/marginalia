@@ -21,19 +21,18 @@ import {
 } from 'react-icons/fi'
 import { FileUploader } from '@/components/FileUploader'
 import { EPubViewer } from '@/components/EPubViewer'
-import { chooseBackground } from './lib/utils'
-import { getBookByKey, getBooks } from '@/indexeddb/books'
+import { addBook, getBookByKey, getBooks } from '@/indexeddb/books'
 import { hash } from './lib/hash'
 
-const DEFAULT_BOOK = '/default.epub'
 export default function Home() {
   const [book, setBook] = useState<StoredBook | null>(null)
   const [uploaderOpen, setUploaderOpen] = useState(false)
-
-  const background = chooseBackground()
-
   useEffect(() => {
-    getLastOpenedBook().then(setBook)
+    const load = async () => {
+      if (isFirstLoad()) await setupDemo()
+      getLastOpenedBook().then(setBook)
+    }
+    load()
   }, [])
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-0 font-serif bg-slate-800 overflow-hidden">
@@ -108,8 +107,12 @@ function handlePrev() {
   window.dispatchEvent(event)
 }
 
-function rememberLastBook(book: StoredBook) {
-  localStorage.setItem('lastBook', book.key)
+function rememberLastBook(book: StoredBook): void {
+  try {
+    localStorage.setItem('lastBook', book.key)
+  } catch (error) {
+    console.error('Failed to store last book:', error)
+  }
 }
 
 async function getLastOpenedBook(): Promise<StoredBook> {
@@ -137,4 +140,29 @@ async function loadDefaultBook(): Promise<StoredBook> {
     })
   if (!book) throw new Error("demo book couldn't load.")
   return book
+}
+
+async function setupDemo(): Promise<void> {
+  const demoBook = await fetch('/demo.epub')
+    .then((response) => response.blob())
+    .then(
+      (blob) => new File([blob], 'demo.epub', { type: 'application/epub+zip' })
+    )
+
+  await addBook(demoBook)
+  const book = await getBooks().then((books) =>
+    books.find((b) => b.name === 'demo.epub')
+  )
+  if (!book) throw new Error('Demo book not found after adding')
+  const demoKey = book.key
+  localStorage.setItem('lastBook', demoKey)
+  const demoPage = 'epubcfi(/6/14!/4/2/4/1:0)'
+  localStorage.setItem(`lastCfi:${demoKey}`, demoPage)
+}
+
+function isFirstLoad(): boolean {
+  // Check if lastBook exists in localStorage
+  const lastBookKey = localStorage.getItem('lastBook')
+  // If it doesn't exist, this is the first load
+  return lastBookKey === null
 }
