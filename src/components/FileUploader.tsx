@@ -44,11 +44,11 @@ export function FileUploader({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm"
+      className="font-serif fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <button
-        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 rounded-full transition-colors"
+        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg transition-colors"
         onClick={onClose}
       >
         <svg
@@ -67,17 +67,17 @@ export function FileUploader({
           />
         </svg>
       </button>
-      <div className="flex flex-col items-center relative w-[95vw] max-w-2xl p-8 rounded-lg border-2  border-slate-500 bg-slate-800 text-center transition-all hover:border-slate-400 shadow-lg">
+      <div className="flex flex-col items-center relative w-[95vw] max-w-2xl p-0 rounded-lg border-0  border-slate-500 bg-slate-800 text-center transition-all hover:border-slate-400 shadow-lg">
         {savedBooks.length > 0 && (
-          <div className="w-full">
-            <h2 className="text-base font-bold text-slate-200 mb-2">
+          <div className="w-full border border-slate-500 rounded-t-lg border-b-0">
+            <h2 className="text-base font-bold text-slate-200 border-slate-500 m-2 ">
               Your Library
             </h2>
-            <div className="max-h-64 overflow-y-auto divide-y divide-slate-600 border border-slate-600 rounded-t-md rounded-b-none bg-slate-700/50 p-2">
+            <div className="max-h-64 overflow-y-auto divide-y divide-slate-600 border border-slate-600 bg-slate-700/50 border-b-0">
               {savedBooks.map((book) => (
                 <div
                   key={book.id}
-                  className="group flex items-center justify-between hover:bg-slate-600/50 transition"
+                  className="group flex items-center border-lr p-0 justify-between hover:bg-slate-600/50 transition"
                 >
                   <button
                     onClick={async (e) => {
@@ -85,7 +85,7 @@ export function FileUploader({
                       await onBookSelected(book)
                       onClose()
                     }}
-                    className="w-full text-left px-3 py-2 text-sm text-slate-100"
+                    className="w-full text-left px-3 py-4 text-sm text-slate-100 font-mono"
                   >
                     📖 {book.name}
                   </button>
@@ -103,12 +103,13 @@ export function FileUploader({
         )}
         <div
           {...getRootProps()}
-          className="flex justify-center items-center w-full p-8 rounded-b-lg border-2 border-dashed border-slate-500 bg-slate-800 cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex justify-center items-center w-full p-8 rounded-b-lg border-1 border-dashed border-slate-500 bg-slate-800 cursor-pointer"
         >
-          <p className="text-lg text-slate-200 font-semibold text-center">
+          <p className="text-lg text-slate-500 text-center">
             {isDragActive
               ? '📥 Drop the file here...'
-              : '📚 Drag & drop an ePub file, or click to select one'}
+              : '📚 Drag & drop an ePub file'}
           </p>
         </div>
       </div>

@@ -22,6 +22,7 @@ import {
 import { FileUploader } from '@/components/FileUploader'
 import { EPubViewer } from '@/components/EPubViewer'
 import { chooseBackground } from './lib/utils'
+import { getBookByKey, getBooks } from '@/indexeddb/books'
 
 const DEFAULT_BOOK = '/default.epub'
 export default function Home() {
@@ -29,30 +30,28 @@ export default function Home() {
   const [uploaderOpen, setUploaderOpen] = useState(false)
 
   const background = chooseBackground()
+
+  useEffect(() => {
+    getLastOpenedBook().then(setBook)
+  }, [])
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-0 font-serif overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen p-0 font-serif bg-slate-800 overflow-hidden">
       <FileUploader
         onBookSelected={(book: StoredBook) => {
+          rememberLastBook(book)
           setBook(book)
         }}
         onClose={() => setUploaderOpen(false)}
         onFilesUploaded={(files) => console.log(files.join(''))}
         open={uploaderOpen}
       />
-      <img
-        onClick={() => setUploaderOpen(true)}
-        className={'overflow-hidden fixed z-[-2]'}
-        src={background}
-      />
 
       {book?.data ? (
         <EPubViewer book={book} />
       ) : (
-        <img
-          onClick={() => setUploaderOpen(true)}
-          className={'overflow-hidden fixed'}
-          src={background}
-        />
+        <div className="flex items-center justify-center w-full h-full">
+          <h1 className="animate-spin text-7xl">⏳</h1>
+        </div>
       )}
 
       <TaskBar>
@@ -106,4 +105,19 @@ function handleNext() {
 function handlePrev() {
   const event = new CustomEvent('navigateEPUB', { detail: 'prev' })
   window.dispatchEvent(event)
+}
+
+function rememberLastBook(book: StoredBook) {
+  localStorage.setItem('lastBook', book.key)
+}
+
+async function getLastOpenedBook(): Promise<StoredBook> {
+  const lastBookKey = localStorage.getItem('lastBook')
+  if (!lastBookKey)
+    throw new Error(
+      'calling `getLastOpenedBook` when no book has ever been opened?'
+    )
+  const book = await getBookByKey(lastBookKey)
+  if (book == null) throw new Error(`No book with key ${lastBookKey}`)
+  return book
 }

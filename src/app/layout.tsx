@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import {
   Geist as FontSans,
   Geist_Mono as FontMono,
-  Cormorant_Garamond as FontSerif,
+  EB_Garamond as FontSerif,
 } from 'next/font/google'
 import './globals.css'
 

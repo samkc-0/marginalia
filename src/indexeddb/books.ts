@@ -9,7 +9,7 @@ class BookDatabase extends Dexie {
   constructor() {
     super('BookDatabase')
     this.version(1).stores({
-      books: '++id,name,data,type',
+      books: '++id,key,name,data,type',
     })
   }
 }
@@ -52,6 +52,12 @@ export const addBooks = async (files: File[]): Promise<void> => {
 
 export const getBooks = async (): Promise<StoredBook[]> => {
   return await db.books.toArray()
+}
+
+export const getBookByKey = async (
+  key: string
+): Promise<StoredBook | undefined> => {
+  return await db.books.where('key').equals(key).first()
 }
 
 export const deleteBook = async (id: number): Promise<void> => {
