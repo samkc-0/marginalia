@@ -64,6 +64,7 @@ export function ReaderPage({
 
     rendition.on('relocated', (location: { start: { cfi: string } }) => {
       const newCfi = location.start.cfi
+      console.log(newCfi)
       onRelocate(newCfi)
     })
 

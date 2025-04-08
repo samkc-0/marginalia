@@ -23,6 +23,7 @@ import { FileUploader } from '@/components/FileUploader'
 import { EPubViewer } from '@/components/EPubViewer'
 import { chooseBackground } from './lib/utils'
 import { getBookByKey, getBooks } from '@/indexeddb/books'
+import { hash } from './lib/hash'
 
 const DEFAULT_BOOK = '/default.epub'
 export default function Home() {
@@ -117,7 +118,23 @@ async function getLastOpenedBook(): Promise<StoredBook> {
     throw new Error(
       'calling `getLastOpenedBook` when no book has ever been opened?'
     )
-  const book = await getBookByKey(lastBookKey)
-  if (book == null) throw new Error(`No book with key ${lastBookKey}`)
+  let book = await getBookByKey(lastBookKey)
+  if (book == null) book = await loadDefaultBook()
+  return book
+}
+
+async function loadDefaultBook(): Promise<StoredBook> {
+  const book = await fetch('/demo.epub')
+    .then((response) => response.arrayBuffer())
+    .then(async (data) => {
+      const hashValue = await hash(data)
+      return {
+        key: hashValue,
+        name: 'demo.epub',
+        data: data,
+        type: 'application/epub+zip',
+      }
+    })
+  if (!book) throw new Error("demo book couldn't load.")
   return book
 }
