@@ -1,7 +1,7 @@
 'use client'
 import { JSX, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { getBooks, addBooks, deleteBook, addBook } from '@/indexeddb/books'
+import { getBooks, deleteBook, addBook } from '@/indexeddb/books'
 
 interface FileUploaderProps {
   onFilesUploaded: (files: File[]) => void
@@ -11,14 +11,13 @@ interface FileUploaderProps {
 }
 
 export function FileUploader({
-  onFilesUploaded,
   onBookSelected,
   open,
   onClose,
 }: FileUploaderProps): JSX.Element | null {
   const [savedBooks, setSavedBooks] = useState<StoredBook[]>([])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, isDragActive } = useDropzone({
     onDrop: async (acceptedFiles) => {
       await addBook(acceptedFiles[0])
       const books = await getBooks()

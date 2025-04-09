@@ -1,18 +1,6 @@
 'use client'
 
-import {
-  JSX,
-  MouseEventHandler,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-import Epub, { Book, Rendition } from 'epubjs'
-import Section from 'epubjs/types/section'
-import { ReaderPage } from '@/components/ReaderPage'
+import { JSX, MouseEventHandler, ReactNode, useEffect, useState } from 'react'
 import {
   FiBookOpen,
   FiFolder,

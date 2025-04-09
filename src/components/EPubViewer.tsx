@@ -1,13 +1,7 @@
 import { useState } from 'react'
 import { ReaderPage } from './ReaderPage'
 
-export function EPubViewer({
-  book,
-  position,
-}: {
-  book: StoredBook
-  position?: string
-}) {
+export function EPubViewer({ book }: { book: StoredBook }) {
   const [cfi, setCfi] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const lastCfi = localStorage.getItem(`lastCfi:${book.key}`)
@@ -16,7 +10,7 @@ export function EPubViewer({
     return ''
   })
 
-  const [notes, setNotes] = useState<Record<string, Annotation[]>>({})
+  const notes = useState<Record<string, Annotation[]>>({})[0]
   const currentNotes = notes[cfi] || []
 
   const handleRelocate = (newCfi: string) => {

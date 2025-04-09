@@ -96,7 +96,7 @@ export function Definition({ headword }: { headword: string }): JSX.Element {
         })
     }
     getDefinition()
-  }, [])
+  }, [headword])
   if (!definition) return <span className="animate-spin">⏳</span>
   return <>{definition}</>
 }

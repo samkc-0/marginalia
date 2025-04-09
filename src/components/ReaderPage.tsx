@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react'
 import Epub, { Book, Rendition } from 'epubjs'
-import { EB_Garamond } from 'next/font/google'
 
 interface ReaderPageProps {
   cfi: string
-  notes: any[]
+  notes: Annotation[]
   onRelocate: (newCfi: string) => void
   book: StoredBook
   fontSize?: string // e.g., '1.5rem'
@@ -75,7 +74,7 @@ export function ReaderPage({
       rendition.destroy()
       epub.destroy()
     }
-  }, [book.data])
+  }, [book.data, cfi, fontSize, onRelocate])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

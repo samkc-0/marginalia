@@ -15,6 +15,5 @@ export function chooseBackground(): string {
   ]
   const dayOfWeek = new Date().getDay() % backgrounds.length
   const daily = backgrounds[dayOfWeek]
-  const random = choose(backgrounds)
   return `./backgrounds/${daily}.jpg`
 }
