@@ -30,7 +30,6 @@ export default function Home() {
           setBook(book)
         }}
         onClose={() => setUploaderOpen(false)}
-        onFilesUploaded={(files) => console.log(files.join(''))}
         open={uploaderOpen}
       />
 

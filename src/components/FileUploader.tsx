@@ -4,7 +4,6 @@ import { useDropzone } from 'react-dropzone'
 import { getBooks, deleteBook, addBook } from '@/indexeddb/books'
 
 interface FileUploaderProps {
-  onFilesUploaded: (files: File[]) => void
   onBookSelected: (book: StoredBook) => void
   open: boolean
   onClose: () => void
